@@ -505,8 +505,8 @@
               </div>
 
               <!-- Parent Screenshot Card -->
-              <div id="parentScreenshotCard" class="relative overflow-hidden bg-gradient-to-br from-white via-[#F3FBF7] to-[#FFF7ED] border border-emerald-100 rounded-3xl p-6 md:p-7 mb-6 shadow-sm">
-                <div class="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-yuan-500 via-yuan-500 to-amber-300"></div>
+              <div id="parentScreenshotCard" class="relative overflow-hidden bg-gradient-to-br from-white via-[#F3FBF7] to-[#F0FDF4] border border-emerald-100 rounded-3xl p-6 md:p-7 mb-6 shadow-sm">
+                <div class="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-emerald-400 via-emerald-300 to-green-200"></div>
                 <div class="screenshot-hide absolute top-4 right-4 flex items-center gap-1.5 opacity-45 hover:opacity-100 transition-opacity">
                   <button @click="editStatusBanner()" class="w-8 h-8 rounded-full bg-white/80 border border-gray-100 flex items-center justify-center hover:bg-white transition shadow-sm" title="编辑名字">
                     <iconify-icon icon="lucide:pencil" width="14" class="text-gray-500"></iconify-icon>
@@ -1334,14 +1334,14 @@
           const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
           bg.addColorStop(0, '#FFFFFF');
           bg.addColorStop(0.58, '#F2FBF7');
-          bg.addColorStop(1, '#FFF7ED');
+          bg.addColorStop(1, '#F0FDF4');
           fillRoundRect(1, 1, 858, 1218, 36, bg);
           strokeRoundRect(1, 1, 858, 1218, 36, '#BBF7D0', 2);
 
           const topGrad = ctx.createLinearGradient(20, 0, 840, 0);
-          topGrad.addColorStop(0, '#FF6D00');
-          topGrad.addColorStop(0.65, '#FF8C14');
-          topGrad.addColorStop(1, '#FACC15');
+          topGrad.addColorStop(0, '#34D399');
+          topGrad.addColorStop(0.65, '#86EFAC');
+          topGrad.addColorStop(1, '#DCFCE7');
           ctx.fillStyle = topGrad;
           ctx.fillRect(30, 0, 800, 8);
 
