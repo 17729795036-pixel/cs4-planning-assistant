@@ -194,39 +194,70 @@
                   <p class="text-sm mt-2">暂无学员</p>
                 </div>
               </template>
-              <div class="space-y-2">
-                <template x-for="s in filteredStudents" :key="s.id">
-                  <div @click="selectStudent(s)"
-                    class="p-3 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md"
-                    :class="selectedStudent?.id === s.id ? 'border-yuan-400 bg-yuan-50 shadow-md' : 'border-transparent bg-gray-50 hover:bg-gray-100'">
-                    <div class="flex items-center justify-between mb-1.5">
-                      <span class="font-semibold text-gray-800 text-sm" x-text="s.name"></span>
-                      <div class="flex items-center gap-1">
-                        <template x-if="s.pushed">
-                          <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">已推送</span>
-                        </template>
-                        <span class="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                          :class="statusColor(s.status)" x-text="statusText(s.status)"></span>
-                      </div>
-                    </div>
-                    <div class="flex gap-3 text-[11px] text-gray-500">
-                      <span>语<span class="font-semibold text-gray-700 ml-0.5" x-text="s.chineseScore || '-'"></span></span>
-                      <span>数<span class="font-semibold text-gray-700 ml-0.5" x-text="s.mathScore || '-'"></span></span>
-                      <span>英<span class="font-semibold text-gray-700 ml-0.5" x-text="s.englishScore || '-'"></span></span>
-                      <template x-if="s.mathTest">
-                        <span class="text-blue-500">摸底<span class="font-semibold ml-0.5" x-text="s.mathTest"></span></span>
-                      </template>
-                    </div>
-                    <template x-if="s.status === 'pending_test' && s.testDeadline">
-                      <div class="mt-1.5 flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-amber-50 border border-amber-200 text-amber-700">
-                        <iconify-icon icon="lucide:clock" width="12" class="text-amber-500"></iconify-icon>
-                        <span>截止：<span class="font-semibold" x-text="s.testDeadline"></span></span>
-                      </div>
+              <div class="space-y-3">
+                <template x-for="section in studentDeadlineSections" :key="section.key">
+                  <div class="space-y-2">
+                    <template x-if="section.label">
+                      <button type="button" @click="toggleDeadlineSection(section.key)"
+                        class="sticky top-0 z-10 w-full flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold backdrop-blur transition-colors"
+                        :class="section.tone === 'danger' ? 'bg-red-50/95 border-red-200 text-red-700' : section.isReminder ? 'bg-yuan-50/95 border-yuan-200 text-yuan-700' : 'bg-white/95 border-gray-100 text-gray-500'">
+                        <span class="flex items-center gap-1">
+                          <iconify-icon :icon="section.tone === 'danger' ? 'lucide:alert-triangle' : section.isReminder ? 'lucide:alarm-clock' : 'lucide:users'" width="12"></iconify-icon>
+                          <span x-text="section.label"></span>
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                          <span x-text="section.students.length + '人'"></span>
+                          <iconify-icon icon="lucide:chevron-down" width="13" class="transition-transform"
+                            :class="isSectionCollapsed(section.key) ? '-rotate-90' : 'rotate-0'"></iconify-icon>
+                        </span>
+                      </button>
                     </template>
-                    <template x-if="s.status === 'pending_test' && !s.testDeadline">
-                      <div class="mt-1.5 flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-red-50 border border-red-200 text-red-600">
-                        <iconify-icon icon="lucide:alert-circle" width="12" class="text-red-400"></iconify-icon>
-                        <span>未设截止时间</span>
+                    <template x-for="s in isSectionCollapsed(section.key) ? [] : section.students" :key="s.id">
+                      <div @click="selectStudent(s)"
+                        class="p-3 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md"
+                        :class="studentCardClass(s)">
+                        <div class="flex items-center justify-between mb-1.5">
+                          <span class="font-semibold text-gray-800 text-sm" x-text="s.name"></span>
+                          <div class="flex items-center gap-1">
+                            <template x-if="s.pushed">
+                              <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">已推送</span>
+                            </template>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                              :class="studentStatusColor(s)" x-text="studentStatusText(s)"></span>
+                          </div>
+                        </div>
+                        <div class="flex gap-3 text-[11px] text-gray-500">
+                          <span>语<span class="font-semibold text-gray-700 ml-0.5" x-text="s.chineseScore || '-'"></span></span>
+                          <span>数<span class="font-semibold text-gray-700 ml-0.5" x-text="s.mathScore || '-'"></span></span>
+                          <span>英<span class="font-semibold text-gray-700 ml-0.5" x-text="s.englishScore || '-'"></span></span>
+                        </div>
+                        <template x-if="s.status === 'pending_test' && s.testDeadline">
+                          <div class="mt-1.5 flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border"
+                            :class="deadlinePillClass(s)">
+                            <iconify-icon :icon="isStudentOverdue(s) ? 'lucide:alert-triangle' : 'lucide:clock'" width="12"></iconify-icon>
+                            <span>截止：<span class="font-semibold" x-text="s.testDeadline"></span></span>
+                          </div>
+                        </template>
+                        <template x-if="s.status === 'pending_test' && !s.testDeadline">
+                          <div class="mt-1.5 flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-red-50 border border-red-200 text-red-600">
+                            <iconify-icon icon="lucide:alert-circle" width="12" class="text-red-400"></iconify-icon>
+                            <span>未设截止时间</span>
+                          </div>
+                        </template>
+                        <template x-if="s.status === 'pending_test'">
+                          <button type="button" @click.stop="completeTest(s)"
+                            class="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg bg-blue-500 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-blue-600 transition">
+                            <iconify-icon icon="lucide:check-circle" width="13"></iconify-icon>
+                            完成摸底
+                          </button>
+                        </template>
+                        <template x-if="isStudentOverdue(s)">
+                          <div @click.stop class="mt-2 rounded-lg border border-red-200 bg-red-50 p-2">
+                            <label class="mb-1 block text-[11px] font-semibold text-red-700">超时原因</label>
+                            <textarea x-model="s.overdueReason" @blur="saveOverdueReason(s)" rows="2" placeholder="填写未按时完成原因..."
+                              class="w-full resize-none rounded-md border border-red-200 bg-white px-2 py-1.5 text-[12px] text-red-700 outline-none focus:border-red-400"></textarea>
+                          </div>
+                        </template>
                       </div>
                     </template>
                   </div>
@@ -235,10 +266,10 @@
             </div>
             <div class="p-3 border-t border-gray-100 bg-gray-50">
               <!-- 流程步骤指示 -->
-              <div class="flex items-center justify-center gap-0.5 mb-2 text-[10px] text-gray-400">
-                <span>建档</span><span>→</span><span>摸底</span><span>→</span><span>出规划</span><span>→</span><span>反馈</span>
+              <div class="flex items-center justify-center gap-1 mb-2 text-[10px] text-gray-400">
+                <span>首通</span><span>→</span><span>待摸底</span><span>→</span><span>已摸底</span>
               </div>
-              <div class="grid grid-cols-4 gap-1 text-center text-[11px] text-gray-500">
+              <div class="grid grid-cols-4 gap-1 text-center text-[10px] text-gray-500">
                 <div @click="setFilter('all')" class="cursor-pointer px-1 py-1.5 rounded-lg transition-all" :class="filterMode === 'all' ? 'bg-gray-200 ring-2 ring-gray-300' : 'hover:bg-gray-100'">
                   <div class="font-bold text-base text-gray-700" x-text="batchStudents.length"></div><div>总学员</div>
                 </div>
@@ -246,10 +277,10 @@
                   <div class="font-bold text-base text-yuan-600" x-text="batchStudents.filter(s => s.status === 'pending_test').length"></div><div>待摸底</div>
                 </div>
                 <div @click="setFilter('test_done')" class="cursor-pointer px-1 py-1.5 rounded-lg transition-all" :class="filterMode === 'test_done' ? 'bg-blue-100 ring-2 ring-blue-400' : 'hover:bg-blue-50'">
-                  <div class="font-bold text-base text-blue-600" x-text="batchStudents.filter(s => s.status === 'test_done').length"></div><div>已摸底</div>
+                  <div class="font-bold text-base text-blue-600" x-text="batchStudents.filter(s => normalizedStatus(s.status) === 'test_done').length"></div><div>已摸底</div>
                 </div>
-                <div @click="setFilter('plan_generated')" class="cursor-pointer px-1 py-1.5 rounded-lg transition-all" :class="filterMode === 'plan_generated' ? 'bg-green-100 ring-2 ring-green-400' : 'hover:bg-green-50'">
-                  <div class="font-bold text-base text-green-600" x-text="batchStudents.filter(s => s.status === 'plan_generated').length"></div><div>已反馈</div>
+                <div @click="setFilter('overdue')" class="cursor-pointer px-1 py-1.5 rounded-lg transition-all" :class="filterMode === 'overdue' ? 'bg-red-100 ring-2 ring-red-400' : 'hover:bg-red-50'">
+                  <div class="font-bold text-base text-red-600" x-text="batchStudents.filter(s => isStudentOverdue(s)).length"></div><div class="leading-tight">超时<br>未完成</div>
                 </div>
               </div>
             </div>
@@ -269,7 +300,7 @@
               </div>
               <h2 class="text-xl font-bold text-gray-700 mb-2">欢迎使用首通规划助手</h2>
               <p class="text-gray-400 text-sm mb-2">点击「新建学员」开始首通信息采集</p>
-              <p class="text-gray-300 text-xs mb-6">录入完成后可一键推送至企微群</p>
+              <p class="text-gray-300 text-xs mb-6">保存后可一键推送至企微群</p>
               <button @click="newStudent()"
                 class="bg-gradient-to-r from-yuan-600 to-yuan-500 text-white px-6 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
                 <iconify-icon icon="lucide:plus" width="18"></iconify-icon>
@@ -566,16 +597,14 @@
                 </template>
               </div>
 
-              <!-- Math Test -->
-              <template x-if="selectedStudent.mathTest">
-                <div class="bg-white rounded-2xl shadow-sm border border-blue-100 p-4 mb-4 flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                    <iconify-icon icon="lucide:clipboard-check" class="text-blue-500" width="20"></iconify-icon>
-                  </div>
-                  <div>
-                    <div class="text-xs text-gray-400">数学摸底测成绩</div>
-                    <div class="text-xl font-bold" :class="getScoreColor(selectedStudent.mathTest)" x-text="selectedStudent.mathTest + ' 分'"></div>
-                  </div>
+              <template x-if="isStudentOverdue(selectedStudent)">
+                <div class="bg-red-50 rounded-2xl shadow-sm border border-red-200 p-5 mb-4">
+                  <h3 class="font-semibold text-red-700 mb-2 text-sm flex items-center gap-2">
+                    <iconify-icon icon="lucide:alert-triangle" class="text-red-500" width="16"></iconify-icon> 超时原因
+                  </h3>
+                  <p class="text-xs text-red-500 mb-2" x-text="'超过截止时间30分钟未完成，请填写原因'"></p>
+                  <textarea x-model="selectedStudent.overdueReason" @blur="saveSelectedOverdueReason()" rows="3" placeholder="例如：家长未及时打开APP、孩子正在补习班、老师已再次提醒..."
+                    class="w-full resize-none rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm text-red-700 outline-none focus:border-red-400"></textarea>
                 </div>
               </template>
 
@@ -669,19 +698,13 @@
               <!-- Actions -->
               <div class="flex flex-wrap gap-3">
                 <template x-if="selectedStudent.status === 'pending_test'">
-                  <button @click="enterTestMode()" class="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                    <iconify-icon icon="lucide:clipboard-check" width="18"></iconify-icon> 录入摸底测成绩
+                  <button @click="completeTest(selectedStudent)" class="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                    <iconify-icon icon="lucide:check-circle" width="18"></iconify-icon> 完成摸底
                   </button>
                 </template>
-                <template x-if="selectedStudent.status === 'test_done' || selectedStudent.status === 'plan_generated'">
-                  <button @click="generatePlan()" class="flex-1 bg-gradient-to-r from-yuan-600 to-yuan-500 text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all pulse-glow flex items-center justify-center gap-2">
-                    <iconify-icon icon="lucide:sparkles" width="18"></iconify-icon>
-                    <span x-text="selectedStudent.status === 'plan_generated' ? '查看反馈规划' : '生成反馈规划'"></span>
-                  </button>
-                </template>
-                <template x-if="selectedStudent.status === 'test_done' || selectedStudent.status === 'plan_generated'">
-                  <button @click="enterTestMode()" class="px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition flex items-center gap-2">
-                    <iconify-icon icon="lucide:edit-3" width="16"></iconify-icon> 修改摸底
+                <template x-if="normalizedStatus(selectedStudent.status) === 'test_done'">
+                  <button type="button" class="px-4 py-3 border border-blue-200 bg-blue-50 rounded-xl text-sm text-blue-600 flex items-center gap-2 cursor-default">
+                    <iconify-icon icon="lucide:check-circle" width="16"></iconify-icon> 已完成摸底
                   </button>
                 </template>
                 <button @click="copyStudentInfo()"
@@ -693,87 +716,6 @@
                   <iconify-icon icon="lucide:trash-2" width="16"></iconify-icon>
                 </button>
               </div>
-            </div>
-          </template>
-
-          <!-- ===== Test Entry Form ===== -->
-          <template x-if="currentView === 'testEntry' && selectedStudent">
-            <div class="max-w-2xl mx-auto p-4 md:p-8 fade-in-up">
-              <div class="flex items-center gap-3 mb-6">
-                <button @click="selectStudent(selectedStudent)" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition">
-                  <iconify-icon icon="lucide:arrow-left" width="16" class="text-gray-600"></iconify-icon>
-                </button>
-                <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <iconify-icon icon="lucide:clipboard-check" class="text-blue-600" width="20"></iconify-icon>
-                </div>
-                <div>
-                  <h2 class="text-xl font-bold text-gray-800">摸底测成绩录入</h2>
-                  <p class="text-sm text-gray-400">学员：<span x-text="selectedStudent.name"></span></p>
-                </div>
-              </div>
-              <form @submit.prevent="saveTestResults()" class="space-y-5">
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
-                  <h3 class="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                    <iconify-icon icon="lucide:award" class="text-blue-500" width="18"></iconify-icon> 摸底测成绩
-                  </h3>
-	                  <div>
-	                    <label class="block text-sm font-medium text-gray-600 mb-1.5">数学摸底测成绩</label>
-	                    <div class="flex flex-col sm:flex-row gap-3 sm:items-start">
-	                      <div class="relative w-48">
-	                        <input type="text" inputmode="numeric" pattern="[0-9]*" x-model="testForm.mathTest" required placeholder="0" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-center" />
-	                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">分</span>
-	                      </div>
-	                      <div class="flex flex-wrap gap-2">
-	                        <template x-for="score in testScoreOptions" :key="'test' + score">
-	                          <button type="button" @click="testForm.mathTest = score" class="px-3 py-2 rounded-xl text-xs border transition"
-	                            :class="Number(testForm.mathTest) === score ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'">
-	                            <span x-text="score + '分'"></span>
-	                          </button>
-	                        </template>
-	                        <button type="button" @click="adjustTestScore(-5)" class="px-3 py-2 rounded-xl text-xs border border-gray-200 text-gray-600">-5</button>
-	                        <button type="button" @click="adjustTestScore(5)" class="px-3 py-2 rounded-xl text-xs border border-gray-200 text-gray-600">+5</button>
-	                      </div>
-	                    </div>
-	                  </div>
-                </div>
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
-                  <h3 class="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                    <iconify-icon icon="lucide:file-search" class="text-blue-500" width="18"></iconify-icon> 摸底测分析
-                  </h3>
-                  <div class="space-y-4">
-	                    <div>
-	                      <label class="block text-sm font-medium text-gray-600 mb-1.5">摸底测问题分析</label>
-	                      <div class="flex flex-wrap gap-2 mb-2">
-	                        <template x-for="item in testNoteOptions" :key="item">
-	                          <button type="button" @click="appendTestText('testNotes', item)" class="px-3 py-1.5 rounded-full text-xs border border-gray-200 bg-white text-gray-600 hover:border-blue-300 transition">
-	                            <span x-text="item"></span>
-	                          </button>
-	                        </template>
-	                      </div>
-	                      <textarea x-model="testForm.testNotes" rows="3" placeholder="例如：数学计算题错误率高，应用题审题不清..."
-	                        class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm resize-none"></textarea>
-	                    </div>
-	                    <div>
-	                      <label class="block text-sm font-medium text-gray-600 mb-1.5">首通问题补充</label>
-	                      <div class="flex flex-wrap gap-2 mb-2">
-	                        <template x-for="item in callIssueOptions" :key="item">
-	                          <button type="button" @click="appendTestText('callIssues', item)" class="px-3 py-1.5 rounded-full text-xs border border-gray-200 bg-white text-gray-600 hover:border-blue-300 transition">
-	                            <span x-text="item"></span>
-	                          </button>
-	                        </template>
-	                      </div>
-	                      <textarea x-model="testForm.callIssues" rows="3" placeholder="首通中发现的其他学习问题、家长诉求等..."
-	                        class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm resize-none"></textarea>
-                    </div>
-                  </div>
-                </div>
-                <div class="flex gap-3 pt-2">
-                  <button type="button" @click="selectStudent(selectedStudent)" class="px-6 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition">取消</button>
-                  <button type="submit" class="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-2.5 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                    <iconify-icon icon="lucide:check-circle" width="18"></iconify-icon> 保存摸底测数据
-                  </button>
-                </div>
-              </form>
             </div>
           </template>
 
@@ -834,12 +776,6 @@
                   </div>
                 </template>
               </div>
-              <template x-if="planStudent.mathTest">
-                <div class="bg-white rounded-xl p-3 flex items-center justify-between shadow-sm">
-                  <div class="flex items-center gap-2"><span class="text-lg">📝</span><span class="text-xs text-gray-500 font-medium">数学摸底测</span></div>
-                  <span class="text-lg font-extrabold" :class="getScoreColor(planStudent.mathTest)" x-text="planStudent.mathTest + ' 分'"></span>
-                </div>
-              </template>
             </div>
           </div>
           <div class="px-5 py-4 bg-[#FF7E1F]">
@@ -1008,6 +944,8 @@
         currentPage: 'login',
         userName: '',
         loginName: '',
+        nowTick: Date.now(),
+        deadlineTimer: null,
 
         // ========== DATA ==========
         students: [],
@@ -1020,12 +958,13 @@
         currentView: 'empty',
         showPlan: false,
         showSidebar: false,
+        collapsedDeadlineSections: {},
 
         // ========== STUDENT ==========
         selectedStudent: null,
         planStudent: null,
         searchQuery: '',
-	        filterMode: 'all', // 'all', 'pending_test', 'test_done', 'plan_generated'
+	        filterMode: 'all', // 'all', 'pending_test', 'test_done', 'overdue'
 	        weakPointTags: ['计算不好', '几何不好', '应用题不好', '阅读理解不好', '作文不好', '语法不好', '词汇量不足', '审题不清'],
 	        quickScores: [95, 90, 85, 80, 75, 70, 60],
 	        supervisorOptions: ['妈妈', '爸爸', '爷爷奶奶', '姥姥姥爷', '父母共同负责'],
@@ -1034,11 +973,10 @@
 	        homeworkOptions: ['30分钟内', '1小时左右', '1.5小时左右', '2小时左右', '2小时以上'],
 	        tutoringOptions: ['无', '有数学班', '有英语班', '有语文班', '周末补习较多'],
 	        noteOptions: ['家长重视学习', '孩子主动性一般', '家长关注提分', '时间安排较紧', '需要老师多督促'],
-	        testScoreOptions: [100, 95, 90, 85, 80, 75, 70, 60],
 	        testNoteOptions: ['计算准确率不稳定', '应用题审题容易漏条件', '基础概念掌握不牢', '图形题思路不清晰', '做题速度偏慢'],
-	        callIssueOptions: ['家长希望看到阶段反馈', '孩子学习习惯需要督促', '课后练习完成度需跟进', '家长期待明确提分路径'],
+	        callIssueOptions: ['孩子学习习惯需要督促', '课后练习完成度需跟进', '家长期待明确学习安排'],
 		        form: { name: '', chineseScore: '', mathScore: '', englishScore: '', weakTags: [], weakPoints: '', notes: '', hasApp: '', supervisor: '', dismissalTime: '', homeArrivalTime: '', homeworkTime: '', tutoring: '', testDeadline: '' },
-	        testForm: { mathTest: '', testNotes: '', callIssues: '' },
+	        testForm: { testNotes: '', callIssues: '' },
         statusBannerName: '',
         copiedBanner: false,
 
@@ -1068,15 +1006,15 @@
           if (this.filterMode === 'pending_test') {
             list = list.filter(s => s.status === 'pending_test');
           } else if (this.filterMode === 'test_done') {
-            list = list.filter(s => s.status === 'test_done');
-          } else if (this.filterMode === 'plan_generated') {
-            list = list.filter(s => s.status === 'plan_generated');
+            list = list.filter(s => this.normalizedStatus(s.status) === 'test_done');
+          } else if (this.filterMode === 'overdue') {
+            list = list.filter(s => this.isStudentOverdue(s));
           }
           if (this.searchQuery.trim()) {
             const q = this.searchQuery.trim().toLowerCase();
             list = list.filter(s => s.name?.toLowerCase().includes(q));
           }
-          if (this.filterMode === 'pending_test') {
+          if (this.filterMode === 'pending_test' || this.filterMode === 'overdue') {
             list = [...list].sort((a, b) => {
               if (a.testDeadline && !b.testDeadline) return -1;
               if (!a.testDeadline && b.testDeadline) return 1;
@@ -1085,6 +1023,125 @@
             });
           }
           return list;
+        },
+        get studentDeadlineSections() {
+          const list = this.filteredStudents;
+          if (!list.length) return [];
+          const groups = [];
+          const groupMap = new Map();
+          const others = [];
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const todayLabel = (today.getMonth() + 1) + '月' + today.getDate() + '日';
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const tomorrowLabel = (tomorrow.getMonth() + 1) + '月' + tomorrow.getDate() + '日';
+
+          const ensureGroup = (key, label, isReminder = false, order = 0, tone = 'default') => {
+            if (!groupMap.has(key)) {
+              const group = { key, label, isReminder, order, tone, students: [] };
+              groupMap.set(key, group);
+              groups.push(group);
+            }
+            return groupMap.get(key);
+          };
+
+          list.forEach(s => {
+            const info = this.parseDeadlineInfo(s.testDeadline);
+            const isPending = this.normalizedStatus(s.status) === 'pending_test';
+            if (!isPending) {
+              others.push(s);
+              return;
+            }
+            if (this.isStudentOverdue(s)) {
+              const label = info ? '已超时 ' + this.relativeDeadlineLabel(info) : '已超时';
+              ensureGroup('overdue-' + (info ? info.dateLabel + '-' + info.time : 'unknown'), label, true, -10000 + (info ? info.dateOrder * 1440 + info.minutes : 0), 'danger').students.push(s);
+              return;
+            }
+            if (info && info.dateLabel === todayLabel) {
+              ensureGroup('today-' + info.time, '今天 ' + info.time, true, info.minutes).students.push(s);
+              return;
+            }
+            if (info && info.dateLabel === tomorrowLabel) {
+              ensureGroup('tomorrow-' + info.time, '明天 ' + info.time, true, 2000 + info.minutes).students.push(s);
+              return;
+            }
+            if (info) {
+              ensureGroup('date-' + info.dateLabel + '-' + info.time, info.dateLabel + ' ' + info.time, false, 10000 + info.dateOrder * 1440 + info.minutes).students.push(s);
+              return;
+            }
+            if (this.filterMode === 'pending_test') {
+              ensureGroup('no-deadline', '未设截止时间', false, 20000).students.push(s);
+              return;
+            }
+            others.push(s);
+          });
+
+          groups.sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
+          if (others.length) {
+            groups.push({
+              key: 'other-students',
+              label: this.filterMode === 'pending_test' ? '其他待摸底' : '其他学员',
+              isReminder: false,
+              order: 30000,
+              students: others
+            });
+          }
+          return groups;
+        },
+        isSectionCollapsed(key) {
+          return !!this.collapsedDeadlineSections[key];
+        },
+        toggleDeadlineSection(key) {
+          this.collapsedDeadlineSections = {
+            ...this.collapsedDeadlineSections,
+            [key]: !this.collapsedDeadlineSections[key]
+          };
+        },
+        relativeDeadlineLabel(info) {
+          if (!info) return '';
+          if (info.dateOrder === 0) return '今天 ' + info.time;
+          if (info.dateOrder === 1) return '明天 ' + info.time;
+          return info.dateLabel + ' ' + info.time;
+        },
+        studentCardClass(s) {
+          if (this.isStudentOverdue(s)) {
+            return this.selectedStudent?.id === s.id ? 'border-red-500 bg-red-50 shadow-md' : 'border-red-300 bg-red-50 hover:bg-red-100';
+          }
+          return this.selectedStudent?.id === s.id ? 'border-yuan-400 bg-yuan-50 shadow-md' : 'border-transparent bg-gray-50 hover:bg-gray-100';
+        },
+        deadlinePillClass(s) {
+          return this.isStudentOverdue(s)
+            ? 'bg-red-100 border-red-300 text-red-700'
+            : 'bg-amber-50 border-amber-200 text-amber-700';
+        },
+        studentStatusText(s) {
+          if (this.isStudentOverdue(s)) return '已超时';
+          return this.statusText(s.status);
+        },
+        studentStatusColor(s) {
+          if (this.isStudentOverdue(s)) return 'bg-red-100 text-red-700';
+          return this.statusColor(s.status);
+        },
+        getDeadlineAt(deadline) {
+          const info = this.parseDeadlineInfo(deadline);
+          return info ? info.targetAt : null;
+        },
+        isStudentOverdue(s) {
+          if (!s || this.normalizedStatus(s.status) !== 'pending_test' || !s.testDeadline) return false;
+          const deadlineAt = this.getDeadlineAt(s.testDeadline);
+          return !!deadlineAt && this.nowTick > deadlineAt + 30 * 60 * 1000;
+        },
+        saveOverdueReason(student) {
+          if (!student) return;
+          const idx = this.students.findIndex(s => s.id === student.id);
+          if (idx < 0) return;
+          this.students[idx].overdueReason = (student.overdueReason || '').trim();
+          this.saveData();
+          if (this.selectedStudent?.id === student.id) this.selectedStudent = { ...this.students[idx] };
+        },
+        saveSelectedOverdueReason() {
+          this.saveOverdueReason(this.selectedStudent);
         },
 	        setFilter(mode) {
 	          this.filterMode = this.filterMode === mode ? 'all' : mode;
@@ -1132,14 +1189,36 @@
 		          d.setHours(preset[0], preset[1], 0, 0);
 	          this.form.testDeadline = this.toDateTimeLocal(d);
 	        },
-	        adjustTestScore(delta) {
-	          const cur = this.testForm.mathTest === '' ? 0 : Number(this.testForm.mathTest);
-	          const next = Math.max(0, Math.min(100, (Number.isNaN(cur) ? 0 : cur) + delta));
-	          this.testForm.mathTest = next;
-	        },
+        parseDeadlineInfo(deadline) {
+          if (!deadline) return null;
+          const match = String(deadline).match(/(\d+)月(\d+)日\s+(\d{1,2}):(\d{2})/);
+          if (!match) return null;
+          const month = Number(match[1]);
+          const day = Number(match[2]);
+          const hour = Number(match[3]);
+          const minute = Number(match[4]);
+          const now = new Date();
+          const target = new Date(now.getFullYear(), month - 1, day, hour, minute, 0, 0);
+          const today = new Date(now);
+          today.setHours(0, 0, 0, 0);
+          if (target.getTime() < today.getTime() - 1000 * 60 * 60 * 24 * 180) {
+            target.setFullYear(target.getFullYear() + 1);
+          }
+          const dateOrder = Math.round((target.getTime() - today.getTime()) / 86400000);
+          return {
+            dateLabel: month + '月' + day + '日',
+            time: String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0'),
+            minutes: hour * 60 + minute,
+            targetAt: target.getTime(),
+            dateOrder
+          };
+        },
 
 	        // ========== INIT ==========
         init() {
+          if (!this.deadlineTimer) {
+            this.deadlineTimer = setInterval(() => { this.nowTick = Date.now(); }, 60000);
+          }
           const saved = localStorage.getItem('cs4_standalone_user');
           if (saved) {
             this.userName = saved;
@@ -1509,20 +1588,31 @@
           const d = new Date(val);
           return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
         },
-        enterTestMode() {
-          this.testForm = { mathTest: this.selectedStudent.mathTest || '', testNotes: this.selectedStudent.testNotes || '', callIssues: this.selectedStudent.callIssues || '' };
-          this.currentView = 'testEntry';
+        completeTest(student = this.selectedStudent) {
+          if (!student) return;
+          if (this.isStudentOverdue(student) && !(student.overdueReason || '').trim()) {
+            alert('该学员已超时，请先填写超时原因');
+            return;
+          }
+          const idx = this.students.findIndex(s => s.id === student.id);
+          if (idx < 0) return;
+          this.students[idx].overdueReason = (student.overdueReason || this.students[idx].overdueReason || '').trim();
+          this.students[idx].status = 'test_done';
+          this.students[idx].testCompletedAt = new Date().toISOString();
+          this.saveData();
+          this.selectedStudent = { ...this.students[idx] };
+          this.currentView = 'detail';
+          this.copyToastMsg = (this.selectedStudent.name || '学员') + '已放入已摸底';
+          this.copyToast = true;
+          setTimeout(() => { this.copyToast = false; }, 2000);
         },
         saveTestResults() {
           const idx = this.students.findIndex(s => s.id === this.selectedStudent.id);
           if (idx < 0) return;
-          const mathTest = Number(this.testForm.mathTest);
-          if (this.testForm.mathTest === '' || Number.isNaN(mathTest)) { alert('请填写数学摸底测成绩'); return; }
-          if (mathTest < 0 || mathTest > 100) { alert('数学摸底测成绩需在 0-100 分之间'); return; }
-          this.students[idx].mathTest = mathTest;
           this.students[idx].testNotes = this.testForm.testNotes.trim();
           this.students[idx].callIssues = this.testForm.callIssues.trim();
           this.students[idx].status = 'test_done';
+          this.students[idx].testCompletedAt = new Date().toISOString();
           this.saveData();
           this.selectedStudent = { ...this.students[idx] };
           this.currentView = 'detail';
@@ -1605,7 +1695,6 @@
           if (s.chineseScore || s.mathScore || s.englishScore) {
             t += `📊 当前成绩：语文 ${s.chineseScore || '-'} | 数学 ${s.mathScore || '-'} | 英语 ${s.englishScore || '-'}\n`;
           }
-          if (s.mathTest) t += `📝 数学摸底测：${s.mathTest} 分\n`;
           t += `⚠️ 薄弱点：${s.weakPoints || '未填写'}\n`;
 	          if (s.supervisor) t += `👨‍👩‍👧 学习负责人：${s.supervisor}\n`;
 	          if (s.dismissalTime) t += `🏫 放学时间：${s.dismissalTime}\n`;
@@ -1613,11 +1702,12 @@
 	          if (s.homeworkTime) t += `📖 作业时间：${s.homeworkTime}\n`;
           if (s.tutoring) t += `📅 补习班：${s.tutoring}\n`;
           if (s.testDeadline) t += `⏳ 摸底截止：${s.testDeadline}\n`;
+          if (s.overdueReason) t += `🔴 超时原因：${s.overdueReason}\n`;
           if (s.hasApp) t += `📱 下载猿辅导APP：${s.hasApp}\n`;
           if (s.notes) t += `💬 首通备注：${s.notes}\n`;
           if (s.testNotes) t += `🔍 摸底分析：${s.testNotes}\n`;
           if (s.callIssues) t += `📞 首通问题：${s.callIssues}\n`;
-          const st = { pending_test: '待摸底', test_done: '已摸底', plan_generated: '已反馈' }[s.status] || '';
+          const st = this.statusText(s.status);
           t += `\n✅ 当前状态：${st}`;
           return t;
         },
@@ -1631,7 +1721,6 @@
             t += `📊 成绩：语文 ${s.chineseScore || '-'} | 数学 ${s.mathScore || '-'} | 英语 ${s.englishScore || '-'}`;
             t += `\n`;
           }
-          if (s.mathTest) t += `📝 数学摸底测：${s.mathTest} 分\n`;
           t += `⚠️ 薄弱点：${s.weakPoints || '-'}\n`;
           if (s.testNotes) t += `🔍 摸底分析：${s.testNotes}\n`;
           t += `\n📍 提分路径规划\n`;
@@ -1679,8 +1768,9 @@
         },
 
         // ========== HELPERS ==========
-        statusText(st) { return { pending_test: '待摸底', test_done: '已摸底', plan_generated: '已反馈' }[st] || '未知'; },
-        statusColor(st) { return { pending_test: 'bg-amber-100 text-amber-700', test_done: 'bg-blue-100 text-blue-700', plan_generated: 'bg-green-100 text-green-700' }[st] || 'bg-gray-100 text-gray-600'; },
+        normalizedStatus(st) { return st === 'plan_generated' ? 'test_done' : st; },
+        statusText(st) { return { pending_test: '待摸底', test_done: '已摸底' }[this.normalizedStatus(st)] || '未知'; },
+        statusColor(st) { return { pending_test: 'bg-amber-100 text-amber-700', test_done: 'bg-blue-100 text-blue-700' }[this.normalizedStatus(st)] || 'bg-gray-100 text-gray-600'; },
         getScoreColor(score) {
           if (!score) return 'text-gray-400';
           const s = Number(score);
