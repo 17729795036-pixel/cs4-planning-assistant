@@ -941,8 +941,8 @@
     document.addEventListener('alpine:init', () => {
       Alpine.data('app', () => ({
         // ========== AUTH ==========
-        currentPage: 'login',
-        userName: '',
+        currentPage: 'main',
+        userName: '公共版',
         loginName: '',
         nowTick: Date.now(),
         deadlineTimer: null,
@@ -1219,12 +1219,11 @@
           if (!this.deadlineTimer) {
             this.deadlineTimer = setInterval(() => { this.nowTick = Date.now(); }, 60000);
           }
-          const saved = localStorage.getItem('cs4_standalone_user');
-          if (saved) {
-            this.userName = saved;
-            this.currentPage = 'main';
-            this.loadData();
-          }
+          const saved = localStorage.getItem('cs4_standalone_user') || '公共版';
+          this.userName = saved;
+          localStorage.setItem('cs4_standalone_user', saved);
+          this.currentPage = 'main';
+          this.loadData();
         },
 
         // ========== AUTH ==========
@@ -1237,15 +1236,18 @@
           this.loadData();
         },
         logout() {
-          localStorage.removeItem('cs4_standalone_user');
-          this.userName = '';
-          this.currentPage = 'login';
+          const defaultUser = '公共版';
+          localStorage.setItem('cs4_standalone_user', defaultUser);
+          this.userName = defaultUser;
+          this.currentPage = 'main';
           this.loginName = '';
           this.students = [];
           this.batches = [];
           this.currentBatch = '';
           this.selectedStudent = null;
+          this.currentView = 'empty';
           this.showSidebar = false;
+          this.loadData();
         },
 
         // ========== DATA (localStorage) ==========
